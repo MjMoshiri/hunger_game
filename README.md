@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# hunger_game
 
-## Getting Started
+An LLM-powered tournament engine that runs structured competitions between options and ranks them. Options are matched head-to-head, an LLM judge scores each matchup, and Elo ratings + a round-robin record decide the standings.
 
-First, run the development server:
+## Experiments
+
+### Billboard Phrase Tournament
+
+We asked five models — **Gemini, Claude, Deepseek, Grok, GPT** — to each generate 10 billboard-style phrases for the company, then ran a full round-robin (50 phrases, 1,225 matchups) with **Gemini** (`gemini-3.1-flash-lite-preview`) as the judge. Each matchup distributes 5 points between the two phrases and updates Elo ratings.
+
+**→ [Full standings: `docs/tournament/STANDINGS.md`](docs/tournament/STANDINGS.md)**
+
+Headline: **Claude won** the model leaderboard, with the single strongest phrase going 49-0. Raw verdicts live in [`data/tournament-result.json`](data/tournament-result.json).
+
+## Engine
+
+The reusable engine lives in `src/engine/`:
+
+- `elo.ts` — Elo rating math (base 1500, K=32).
+- `tournament.ts` — thin wrapper over [`tournament-organizer`](https://www.npmjs.com/package/tournament-organizer) (create, report, standings, (de)serialize).
+- `judge.ts` — calls the Gemini API with structured output (pros/cons per item + a 5-point split) for a single matchup, with retry/backoff on truncated responses and 429/5xx.
+- `runner.ts` — orchestrates a round-robin: judges every active match with a bounded concurrency pool and feeds results back as Elo updates.
+
+## Running a tournament
+
+1. Copy the env template and add your Gemini API key:
+
+   ```bash
+   cp .env.example .env.local
+   # set GEMINI_API_KEY in .env.local
+   ```
+
+2. Run the tournament and generate the report:
+
+   ```bash
+   npm run tournament         # judges all matchups -> data/tournament-result.json
+   npm run tournament:report  # builds docs/tournament/STANDINGS.md
+   ```
+
+   Concurrency defaults to 12; override with `GEMINI_CONCURRENCY`. The judge model can be overridden with `GEMINI_MODEL`.
+
+## Development
+
+This is a [Next.js](https://nextjs.org) app.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev    # start the dev server at http://localhost:3000
+npm run build  # production build
+npm run lint   # eslint
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

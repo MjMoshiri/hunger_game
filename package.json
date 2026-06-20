@@ -11,8 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "tournament": "tsx scripts/run-first-tournament.ts",
-    "tournament:report": "tsx scripts/report-first-tournament.ts"
+    "tournament": "tsx scripts/run-tournament.ts",
+    "tournament:report": "tsx scripts/report-tournament.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

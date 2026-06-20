@@ -1,7 +1,7 @@
-const XAI_API_URL = "https://api.x.ai/v1/chat/completions";
-const DEFAULT_MODEL = "grok-4.3";
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
 const DEFAULT_MAX_RETRIES = 6;
-const MAX_COMPLETION_TOKENS = 4096;
+const MAX_OUTPUT_TOKENS = 4096;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 60000;
 
@@ -32,13 +32,24 @@ interface RawVerdict {
   item2_points: number;
 }
 
-interface ChatCompletion {
-  choices: Array<{ message?: { content?: string }; finish_reason?: string }>;
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    finishReason?: string;
+  }>;
+}
+
+interface GeminiError {
+  error?: {
+    code?: number;
+    status?: string;
+    message?: string;
+    details?: Array<{ "@type"?: string; retryDelay?: string }>;
+  };
 }
 
 const VERDICT_SCHEMA = {
   type: "object",
-  additionalProperties: false,
   required: [
     "item1_pros",
     "item1_cons",
@@ -55,6 +66,14 @@ const VERDICT_SCHEMA = {
     item1_points: { type: "integer", minimum: 0, maximum: POINTS_PER_MATCH },
     item2_points: { type: "integer", minimum: 0, maximum: POINTS_PER_MATCH },
   },
+  propertyOrdering: [
+    "item1_pros",
+    "item1_cons",
+    "item2_pros",
+    "item2_cons",
+    "item1_points",
+    "item2_points",
+  ],
 } as const;
 
 function parseVerdict(content: string): JudgeVerdict | null {
@@ -81,19 +100,28 @@ function parseVerdict(content: string): JudgeVerdict | null {
   };
 }
 
-function buildPrompt(title1: string, title2: string): string {
-  return `Compare these two introduction post titles for a founder introducing a new company.
+function buildPrompt(phrase1: string, phrase2: string): string {
+  return `Compare these two billboard-style phrases for a company.
 
-The company uses LLM-powered tournament-style evaluations to help teams pick the best ideas, copy, campaigns, strategies, candidates, or content.
+The company helps teams find the best option by running AI-powered competitions between ideas, copy, campaigns, candidates, product concepts, slogans, and other business assets.
 
-Target audience: tech bros — founders, AI builders, growth people, product leaders, and VC-adjacent operators.
+Choose the phrase that would work better in marketing.
 
-Choose the title that is more scroll-stopping, clear, novel, and likely to drive engagement.
+Prioritize the phrase that is:
+- More instantly understandable
+- More memorable
+- More emotionally compelling
+- More differentiated
+- More likely to make someone curious
+- Better suited for a billboard, website hero, or launch campaign
+- Focused on the outcome, not the technical process
 
-You have ${POINTS_PER_MATCH} points to distribute between the two titles based on which is stronger. The points must sum to exactly ${POINTS_PER_MATCH} (for example 5-0, 4-1, or 3-2). Give concise pros and cons for each title.
+Avoid phrases that feel generic, overly technical, too narrow, or hard to grasp quickly.
 
-Title A: ${title1}
-Title B: ${title2}`;
+You have ${POINTS_PER_MATCH} points to distribute between the two phrases based on which is stronger. The points must sum to exactly ${POINTS_PER_MATCH} (for example 5-0, 4-1, or 3-2). Give concise pros and cons for each phrase.
+
+Phrase A: ${phrase1}
+Phrase B: ${phrase2}`;
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -119,54 +147,47 @@ function backoffDelay(attempt: number): number {
   return exponential / 2 + Math.random() * (exponential / 2);
 }
 
-function retryAfterMs(header: string | null): number | null {
-  if (!header) {
+function retryDelayMs(body: GeminiError): number | null {
+  const retryInfo = body.error?.details?.find((detail) =>
+    detail["@type"]?.includes("RetryInfo"),
+  );
+  if (!retryInfo?.retryDelay) {
     return null;
   }
-  const seconds = Number(header);
-  if (Number.isFinite(seconds)) {
-    return Math.max(0, seconds * 1000);
-  }
-  const date = Date.parse(header);
-  if (Number.isNaN(date)) {
-    return null;
-  }
-  return Math.max(0, date - Date.now());
+  const seconds = Number(retryInfo.retryDelay.replace(/s$/, ""));
+  return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : null;
 }
 
 export async function judgePair(
-  title1: string,
-  title2: string,
+  phrase1: string,
+  phrase2: string,
   options: JudgeOptions = {},
 ): Promise<JudgeVerdict> {
-  const apiKey = options.apiKey ?? process.env.XAI_API_KEY;
+  const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("XAI_API_KEY is not set");
+    throw new Error("GEMINI_API_KEY is not set");
   }
 
+  const model = options.model ?? process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
+  const url = `${GEMINI_API_BASE}/${model}:generateContent`;
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
   const body = JSON.stringify({
-    model: options.model ?? process.env.XAI_MODEL ?? DEFAULT_MODEL,
-    max_tokens: MAX_COMPLETION_TOKENS,
-    messages: [{ role: "user", content: buildPrompt(title1, title2) }],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "title_comparison",
-        strict: true,
-        schema: VERDICT_SCHEMA,
-      },
+    contents: [{ parts: [{ text: buildPrompt(phrase1, phrase2) }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: VERDICT_SCHEMA,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
     },
   });
 
   for (let attempt = 0; ; attempt += 1) {
     let response: Response;
     try {
-      response = await fetch(XAI_API_URL, {
+      response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "x-goog-api-key": apiKey,
         },
         signal: options.signal,
         body,
@@ -180,11 +201,11 @@ export async function judgePair(
     }
 
     if (response.ok) {
-      const completion = (await response.json()) as ChatCompletion;
-      const choice = completion.choices[0];
-      const content = choice?.message?.content;
+      const result = (await response.json()) as GeminiResponse;
+      const candidate = result.candidates?.[0];
+      const content = candidate?.content?.parts?.[0]?.text;
       const verdict = content ? parseVerdict(content) : null;
-      if (verdict && choice?.finish_reason !== "length") {
+      if (verdict && candidate?.finishReason !== "MAX_TOKENS") {
         return verdict;
       }
       if (attempt < maxRetries) {
@@ -192,17 +213,22 @@ export async function judgePair(
         continue;
       }
       throw new Error(
-        `xAI response could not be parsed (finish_reason=${choice?.finish_reason ?? "unknown"}): ${content ?? "<empty>"}`,
+        `Gemini response could not be parsed (finishReason=${candidate?.finishReason ?? "unknown"}): ${content ?? "<empty>"}`,
       );
     }
 
     if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-      const delay = retryAfterMs(response.headers.get("retry-after")) ?? backoffDelay(attempt);
+      let parsedDelay: number | null = null;
+      try {
+        parsedDelay = retryDelayMs((await response.clone().json()) as GeminiError);
+      } catch {
+        parsedDelay = null;
+      }
       await response.text();
-      await sleep(delay, options.signal);
+      await sleep(parsedDelay ?? backoffDelay(attempt), options.signal);
       continue;
     }
 
-    throw new Error(`xAI request failed (${response.status}): ${await response.text()}`);
+    throw new Error(`Gemini request failed (${response.status}): ${await response.text()}`);
   }
 }
