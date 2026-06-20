@@ -1,0 +1,40 @@
+1. A/B Testing is Dead: Why We Built an AI Tournament Engine to Replace It
+2. Stop Testing Just Two Ideas. Test Them All: The Rise of LLM Evaluation Brackets
+3. Why A/B Testing is Too Slow (And How AI Knockout Brackets Fix It)
+4. March Madness for Business Decisions: Meet Our LLM Evaluation Arena
+5. I Built an "AI Fight Club" for Your Marketing Copy. Here’s Who Wins.
+6. Why We’re Using Chess Tournament Systems to Evaluate Business Strategies
+7. From 100 Variations to 1 Clear Winner: The Power of AI Round-Robin Evaluations
+8. Don’t Guess. Run a Tournament: Introducing the Future of AI Decision Optimization
+9. The 100x A/B Test: How We Use LLMs to Crown the Best Candidate in Minutes
+10. I was Tired of Guessing What Works—So I Built an AI Arena to Fight Out the Best Ideas
+11. A/B Testing Was Built for Two Options. We’re Building for the Age of Infinite Ideas
+12. What If Your Best Marketing Campaign Could Win a Tournament?
+13. Introducing Decision Tournaments: A New Way to Find the Best Idea
+14. From Guesswork to Game Play: How LLM-Powered Tournaments Can Optimize Business Decisions
+15. Why the Future of Experimentation Looks More Like March Madness Than A/B Testing
+16. Let the Best Idea Win: Building a Tournament Engine for Modern Teams
+17. Beyond A/B Tests: How Competitive Evaluation Unlocks Better Decisions
+18. We’re Turning Business Experiments into Structured Competitions
+19. The Startup That Pits Ideas Against Each Other Until the Best One Wins
+20. Knockout Brackets for Copy, Campaigns, Candidates, and Strategy: Meet the Future of Evaluation
+21. A/B Testing Only Has Two Letters. We Use the Whole Alphabet.
+22. We Built a March Madness Bracket for Your Business Decisions
+23. Why We're Letting AI Judge a Fight Between Your 50 Best Ideas (Instead of Picking Two)
+24. Your Best Marketing Copy Is Sitting on the Bench. We Built the Tryouts.
+25. We Replaced Our Client's 6-Week A/B Test With a 6-Hour Tournament. Here's What Happened.
+26. The Decision Layer Is the Next Big Platform — Here's Why We're Building It
+27. What If Every Business Decision Came With a Confidence Score?
+28. Stop Guessing Which Email Converts. Make Them Compete.
+29. We Taught LLMs to Run Tournaments — and It Turns Out Decisions Have Winners
+30. Round-Robin, Swiss, Knockout: The Evaluation Formats That Outperform A/B Testing (and Why Nobody Uses Them Yet)
+31. A/B Testing Is Dead. Long Live the Tournament.
+32. Stop Testing Two Options. Start Running Tournaments.
+33. Your Ideas Deserve a Fair Fight.
+34. The End of Gut Feel and Inconclusive Tests
+35. From 2 Variants to 16 Contenders: The New Way to Optimize
+36. What If Your Best Ad Copy, Landing Page, or Strategy Had to Win a Bracket?
+37. Beyond A/B Testing: LLM Tournaments That Deliver Clear Winners
+38. We Don’t Run Tests. We Run Competitions.
+39. Marketing Campaigns. Job Descriptions. Business Strategies. They All Compete Now.
+40. Tired of Flawed Experiments and Slow Results?

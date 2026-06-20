@@ -23,3 +23,14 @@ export type {
   Standing,
   TournamentFormat,
 } from "./tournament";
+
+export { judgePair, POINTS_PER_MATCH } from "./judge";
+export type { JudgeOptions, JudgeVerdict } from "./judge";
+
+export { runRoundRobin } from "./runner";
+export type {
+  MatchFailure,
+  MatchupVerdict,
+  RoundRobinOptions,
+  RoundRobinResult,
+} from "./runner";
